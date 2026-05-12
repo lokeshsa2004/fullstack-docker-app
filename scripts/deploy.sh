@@ -96,6 +96,13 @@ set -e
 # Update system
 sudo yum update -y || sudo apt-get update -y
 
+# Install curl/wget for deploy health checks and tooling (minimal AMIs often lack curl)
+if command -v apt-get &> /dev/null; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget ca-certificates
+elif command -v yum &> /dev/null; then
+    sudo yum install -y curl wget
+fi
+
 # Install Docker
 if ! command -v docker &> /dev/null; then
     echo "Installing Docker..."
@@ -191,29 +198,65 @@ done
 echo "Starting application..."
 sudo docker-compose -f "\$APP_DIR/docker-compose.yml" -f "\$APP_DIR/docker-compose.prod.yml" -f "\$APP_DIR/docker-compose.registry.yml" up -d
 
-sleep 10
+sleep 25
 echo "Application deployed successfully"
 EOF
 
 log_success "Application deployment completed"
 
-# Step 3: Health check
+# Step 3: Health check (127.0.0.1 avoids IPv6 quirks; fall back if host has no curl)
 log_info "Step 3: Running health checks..."
 
-max_attempts=30
+remote_check_health() {
+    ssh ${SSH_OPTS} "${EC2_ADDR}" 'bash -s' << 'REMOTE_HEALTH'
+set +e
+URL="http://127.0.0.1/health"
+if command -v curl >/dev/null 2>&1; then
+  curl -fsS --connect-timeout 5 --max-time 10 "$URL" >/dev/null 2>&1 && exit 0
+fi
+if command -v wget >/dev/null 2>&1; then
+  wget -q -O /dev/null --timeout=10 "$URL" 2>/dev/null && exit 0
+fi
+if sudo docker exec portfolio_nginx wget -q -O /dev/null --timeout=10 http://127.0.0.1/health 2>/dev/null; then
+  exit 0
+fi
+exit 1
+REMOTE_HEALTH
+}
+
+log_remote_diag() {
+    log_warn "Remote diagnostics (docker ps / recent logs):"
+    ssh ${SSH_OPTS} "${EC2_ADDR}" 'bash -s' << 'REMOTE_DIAG' || true
+APP_DIR="/opt/portfolio-manager"
+sudo docker ps -a 2>/dev/null || true
+echo "--- nginx (last 60 lines) ---"
+sudo docker logs --tail 60 portfolio_nginx 2>&1 || true
+echo "--- app (last 80 lines) ---"
+sudo docker logs --tail 80 portfolio_app 2>&1 || true
+echo "--- db (last 40 lines) ---"
+sudo docker logs --tail 40 portfolio_db 2>&1 || true
+if [ -d "$APP_DIR" ]; then
+  echo "--- compose ps ---"
+  sudo docker-compose -f "$APP_DIR/docker-compose.yml" -f "$APP_DIR/docker-compose.prod.yml" -f "$APP_DIR/docker-compose.registry.yml" ps 2>&1 || true
+fi
+REMOTE_DIAG
+}
+
+max_attempts=45
 attempt=1
-while [ $attempt -le $max_attempts ]; do
-    if ssh ${SSH_OPTS} "${EC2_ADDR}" "curl -f http://localhost/health &> /dev/null"; then
+while [ "$attempt" -le "$max_attempts" ]; do
+    if remote_check_health; then
         log_success "Health check passed"
         break
     fi
     log_warn "Health check failed (attempt $attempt/$max_attempts)..."
-    sleep 2
-    ((attempt++))
+    sleep 3
+    attempt=$((attempt + 1))
 done
 
-if [ $attempt -gt $max_attempts ]; then
+if [ "$attempt" -gt "$max_attempts" ]; then
     log_error "Health check failed after $max_attempts attempts"
+    log_remote_diag
     exit 1
 fi
 

@@ -140,17 +140,18 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          max_attempts=30
+          max_attempts=45
           attempt=1
-          while [ $attempt -le $max_attempts ]; do
-            if curl -f http://${{ secrets.EC2_HOST }}/health &> /dev/null; then
+          while [ "$attempt" -le "$max_attempts" ]; do
+            if curl -fsS --connect-timeout 5 --max-time 15 "http://${{ secrets.EC2_HOST }}/health" >/dev/null 2>&1; then
               echo "Health check passed"
               exit 0
             fi
             echo "Health check failed (attempt $attempt/$max_attempts)..."
-            sleep 2
-            ((attempt++))
+            sleep 3
+            attempt=$((attempt + 1))
           done
+          echo "Tip: ensure EC2 security group allows inbound TCP 80 from the internet (GitHub Actions runners)."
           exit 1
 
       - name: Slack Notification
