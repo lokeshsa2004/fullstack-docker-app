@@ -32,7 +32,9 @@ async function loadHomeStats() {
         showLoading(false);
     } catch (error) {
         Logger.error('Failed to load home stats', error);
-        // Don't show error to user on home page, just use zero values
+        document.getElementById('stat-portfolios').textContent = '0';
+        document.getElementById('stat-investments').textContent = '0';
+        document.getElementById('stat-total-value').textContent = formatCurrency(0);
         showLoading(false);
     }
 }

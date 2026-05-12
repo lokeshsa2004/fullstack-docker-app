@@ -1,160 +1,107 @@
-{% extends "base.html" %} {% block title %}Dashboard - Portfolio Manager{%
-endblock %} {% block content %}
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Portfolio Manager{% endblock %}
+
+{% block content %}
 <div class="dashboard-container">
   <div class="dashboard-header">
-    <h1>Dashboard</h1>
-    <button class="btn btn-primary" id="add-portfolio-btn">
-      + New Portfolio
-    </button>
+    <div>
+      <p class="breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true"> / </span>
+        <span>Dashboard</span>
+      </p>
+      <h1>Dashboard</h1>
+      <p class="page-subtitle">Portfolios and investments loaded from the API.</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="add-portfolio-btn">+ New portfolio</button>
   </div>
+
+  <div id="success-message" class="success-message page-alert" style="display: none" role="status"></div>
 
   <div class="loading" id="loading" style="display: none">
-    <div class="spinner"></div>
-    <p>Loading...</p>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Loading…</p>
   </div>
 
-  <div class="error-message" id="error-message" style="display: none"></div>
+  <div class="error-message" id="error-message" style="display: none" role="alert"></div>
 
-  <!-- Portfolios Section -->
   <section class="portfolios-section">
-    <h2>Your Portfolios</h2>
-    <div id="portfolios-container" class="portfolios-grid">
-      <p id="no-portfolios" class="empty-state">
-        No portfolios yet. Create one to get started!
-      </p>
-    </div>
+    <h2>Your portfolios</h2>
+    <p id="no-portfolios" class="empty-state">No portfolios yet. Create one to get started.</p>
+    <div id="portfolios-container" class="portfolios-grid"></div>
   </section>
 
-  <!-- Portfolio Modal -->
-  <div id="portfolio-modal" class="modal">
+  <div id="portfolio-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <h2 id="modal-title">Create New Portfolio</h2>
+      <button type="button" class="close-modal" aria-label="Close">&times;</button>
+      <h2 id="modal-title">Create new portfolio</h2>
       <form id="portfolio-form">
         <div class="form-group">
-          <label for="portfolio-name">Portfolio Name *</label>
-          <input
-            type="text"
-            id="portfolio-name"
-            required
-            placeholder="e.g., My Retirement Fund"
-          />
+          <label for="portfolio-name">Portfolio name *</label>
+          <input type="text" id="portfolio-name" required placeholder="e.g., My retirement fund" />
         </div>
         <div class="form-group">
-          <label for="portfolio-owner">Owner Name *</label>
-          <input
-            type="text"
-            id="portfolio-owner"
-            required
-            placeholder="e.g., John Doe"
-          />
+          <label for="portfolio-owner">Owner name *</label>
+          <input type="text" id="portfolio-owner" required placeholder="e.g., Jane Doe" />
         </div>
         <div class="form-group">
           <label for="portfolio-description">Description</label>
-          <textarea
-            id="portfolio-description"
-            placeholder="Add a description..."
-          ></textarea>
+          <textarea id="portfolio-description" placeholder="Optional description…"></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn btn-secondary" id="cancel-portfolio">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-primary">Save Portfolio</button>
+          <button type="button" class="btn btn-secondary" id="cancel-portfolio">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save portfolio</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Investment Modal -->
-  <div id="investment-modal" class="modal">
+  <div id="investment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="investment-modal-title">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <h2>Add Investment</h2>
+      <button type="button" class="close-modal" aria-label="Close">&times;</button>
+      <h2 id="investment-modal-title">Add investment</h2>
       <form id="investment-form">
         <input type="hidden" id="investment-portfolio-id" />
         <input type="hidden" id="investment-id" />
         <div class="form-group">
-          <label for="investment-ticker">Ticker Symbol *</label>
-          <input
-            type="text"
-            id="investment-ticker"
-            required
-            placeholder="e.g., AAPL"
-            maxlength="10"
-          />
+          <label for="investment-ticker">Ticker symbol *</label>
+          <input type="text" id="investment-ticker" required placeholder="e.g., AAPL" maxlength="10" />
         </div>
         <div class="form-group">
-          <label for="investment-name">Company Name *</label>
-          <input
-            type="text"
-            id="investment-name"
-            required
-            placeholder="e.g., Apple Inc."
-          />
+          <label for="investment-name">Company name *</label>
+          <input type="text" id="investment-name" required placeholder="e.g., Apple Inc." />
         </div>
         <div class="form-group">
           <label for="investment-sector">Sector</label>
-          <input
-            type="text"
-            id="investment-sector"
-            placeholder="e.g., Technology"
-          />
+          <input type="text" id="investment-sector" placeholder="e.g., Technology" />
         </div>
         <div class="form-group">
           <label for="investment-quantity">Quantity *</label>
-          <input
-            type="number"
-            id="investment-quantity"
-            required
-            step="0.01"
-            min="0"
-            placeholder="e.g., 10"
-          />
+          <input type="number" id="investment-quantity" required step="0.01" min="0" placeholder="e.g., 10" />
         </div>
         <div class="form-group">
-          <label for="investment-purchase-price">Purchase Price ($) *</label>
-          <input
-            type="number"
-            id="investment-purchase-price"
-            required
-            step="0.01"
-            min="0"
-            placeholder="e.g., 150.50"
-          />
+          <label for="investment-purchase-price">Purchase price ($) *</label>
+          <input type="number" id="investment-purchase-price" required step="0.01" min="0" placeholder="e.g., 150.50" />
         </div>
         <div class="form-group">
-          <label for="investment-current-price">Current Price ($) *</label>
-          <input
-            type="number"
-            id="investment-current-price"
-            required
-            step="0.01"
-            min="0"
-            placeholder="e.g., 175.80"
-          />
+          <label for="investment-current-price">Current price ($) *</label>
+          <input type="number" id="investment-current-price" required step="0.01" min="0" placeholder="e.g., 175.80" />
         </div>
         <div class="form-group">
           <label for="investment-notes">Notes</label>
-          <textarea
-            id="investment-notes"
-            placeholder="Add notes about this investment..."
-          ></textarea>
+          <textarea id="investment-notes" placeholder="Optional notes…"></textarea>
         </div>
         <div class="modal-buttons">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="cancel-investment"
-          >
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-primary">Save Investment</button>
+          <button type="button" class="btn btn-secondary" id="cancel-investment">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save investment</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script src="/static/js/dashboard.js"></script>
 {% endblock %}

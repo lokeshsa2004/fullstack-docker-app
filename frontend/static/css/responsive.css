@@ -2,12 +2,56 @@
    RESPONSIVE DESIGN
    ======================================== */
 
-/* Tablets (768px and up) */
-@media (max-width: 768px) {
-    .nav-menu {
-        gap: 20px;
+@media (max-width: 900px) {
+    .nav-toggle {
+        display: flex;
     }
 
+    .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        gap: 0;
+        background: var(--surface-color);
+        box-shadow: var(--shadow-lg);
+        padding: 12px 0 20px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: max-height 0.35s ease, opacity 0.25s ease;
+        z-index: 99;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .nav-menu.active {
+        max-height: 320px;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .nav-item {
+        width: 100%;
+    }
+
+    .nav-link {
+        display: block;
+        padding: 14px 24px;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+
+    .nav-container {
+        position: relative;
+    }
+}
+
+/* Tablets (768px and up) */
+@media (max-width: 768px) {
     h1 {
         font-size: 2rem;
     }
@@ -60,8 +104,7 @@
     }
 
     .nav-menu {
-        gap: 10px;
-        font-size: 0.9rem;
+        top: 60px;
     }
 
     h1 {

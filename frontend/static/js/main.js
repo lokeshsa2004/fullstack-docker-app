@@ -58,10 +58,28 @@ async function fetchAPI(endpoint, options = {}) {
             ...options,
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data = null;
+        if (text && text.length > 0) {
+            try {
+                data = JSON.parse(text);
+            } catch {
+                if (!response.ok) {
+                    throw new Error(response.statusText || 'API Error');
+                }
+            }
+        }
 
         if (!response.ok) {
-            const errorMessage = data.detail || response.statusText || 'API Error';
+            const detail = data && data.detail;
+            const errorMessage =
+                typeof detail === 'string'
+                    ? detail
+                    : Array.isArray(detail)
+                      ? detail.map((d) => d.msg || JSON.stringify(d)).join('; ')
+                      : detail
+                        ? JSON.stringify(detail)
+                        : response.statusText || 'API Error';
             throw new Error(errorMessage);
         }
 
@@ -171,7 +189,6 @@ const Logger = {
     },
 };
 
-// Ready state check
 function onReady(callback) {
     if (document.readyState !== 'loading') {
         callback();
@@ -179,6 +196,28 @@ function onReady(callback) {
         document.addEventListener('DOMContentLoaded', callback);
     }
 }
+
+function initMobileNav() {
+    const toggle = document.querySelector('.nav-toggle');
+    const menu = document.getElementById('nav-menu');
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener('click', () => {
+        const open = menu.classList.toggle('active');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+            menu.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', 'Open menu');
+        });
+    });
+}
+
+onReady(initMobileNav);
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

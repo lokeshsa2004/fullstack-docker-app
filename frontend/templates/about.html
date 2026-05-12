@@ -1,101 +1,60 @@
-{% extends "base.html" %} {% block title %}About - Portfolio Manager{% endblock
-%} {% block content %}
+{% extends "base.html" %}
+
+{% block title %}About — Portfolio Manager{% endblock %}
+
+{% block content %}
 <div class="about-container">
   <section class="about-hero">
     <div class="container">
+      <p class="breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true"> / </span>
+        <span>About</span>
+      </p>
       <h1>About Portfolio Manager</h1>
-      <p>Simplifying investment management for everyone</p>
+      <p class="hero-lead">A small full-stack reference app: FastAPI, PostgreSQL, Nginx, and Docker.</p>
     </div>
   </section>
 
   <section class="about-content">
     <div class="container">
       <div class="about-section">
-        <h2>Our Mission</h2>
+        <h2>What you can do</h2>
         <p>
-          Portfolio Manager is dedicated to making investment management
-          accessible and easy for everyone. We believe that tracking your
-          investments shouldn't be complicated or time-consuming.
+          Use the <a href="/dashboard">dashboard</a> to browse seeded portfolios, expand investments, and add or
+          edit records. Everything persists in PostgreSQL. Developers can use the
+          <a href="/docs" target="_blank" rel="noopener noreferrer">REST API</a> with the same data model.
         </p>
       </div>
 
       <div class="about-section">
-        <h2>Key Features</h2>
-        <ul class="about-list">
-          <li>✅ Create and manage multiple investment portfolios</li>
-          <li>✅ Track individual stocks and their performance</li>
-          <li>✅ Monitor real-time portfolio values</li>
-          <li>✅ Get detailed insights and analytics</li>
-          <li>✅ Secure data storage with enterprise-grade protection</li>
-          <li>✅ Responsive design - works on all devices</li>
-        </ul>
-      </div>
-
-      <div class="about-section">
-        <h2>Technology Stack</h2>
+        <h2>Stack</h2>
         <div class="tech-grid">
           <div class="tech-item">
             <h4>Backend</h4>
-            <p>FastAPI • Python</p>
+            <p>FastAPI · Python · SQLAlchemy</p>
           </div>
           <div class="tech-item">
             <h4>Database</h4>
-            <p>PostgreSQL</p>
+            <p>PostgreSQL · init SQL seed</p>
           </div>
           <div class="tech-item">
             <h4>Frontend</h4>
-            <p>HTML • CSS • JavaScript</p>
+            <p>Jinja2 pages · CSS · JavaScript</p>
           </div>
           <div class="tech-item">
-            <h4>Deployment</h4>
-            <p>Docker • Nginx</p>
+            <h4>Ops</h4>
+            <p>Docker Compose · Nginx reverse proxy</p>
           </div>
         </div>
       </div>
 
       <div class="about-section">
-        <h2>Contact & Support</h2>
-        <p>Have questions or need assistance? We're here to help!</p>
-        <div class="contact-info">
-          <p><strong>Email:</strong> support@portfoliomanager.com</p>
-          <p><strong>Phone:</strong> +1 (555) 123-4567</p>
-          <p>
-            <strong>Address:</strong> 123 Finance Street, San Francisco, CA
-            94105
-          </p>
-        </div>
-      </div>
-
-      <div class="about-section">
-        <h2>Frequently Asked Questions</h2>
-        <div class="faq-item">
-          <h4>Is my data secure?</h4>
-          <p>
-            Yes! We use industry-standard encryption and security practices to
-            protect your data.
-          </p>
-        </div>
-        <div class="faq-item">
-          <h4>Can I create multiple portfolios?</h4>
-          <p>
-            Absolutely! Create as many portfolios as you need for different
-            investment goals.
-          </p>
-        </div>
-        <div class="faq-item">
-          <h4>Is there a cost?</h4>
-          <p>
-            Portfolio Manager is completely free to use. No hidden fees or
-            charges.
-          </p>
-        </div>
-        <div class="faq-item">
-          <h4>Do you offer API access?</h4>
-          <p>
-            Yes, we have a RESTful API available for integration with other
-            applications.
-          </p>
-        </div>
+        <h2>Navigation</h2>
+        <p>
+          Start at the <a href="/">home page</a> for an overview, then open the dashboard for data. Use the top
+          navigation on any screen size; on small viewports, open the menu with the menu button.
+        </p>
       </div>
     </div>
   </section>

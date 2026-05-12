@@ -1,13 +1,16 @@
 """FastAPI Application Entry Point"""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.core.config import settings, logger
 from app.api.routes import health_router, portfolio_router, investment_router
+from app.api.routes.html_pages import router as html_pages_router, templates as jinja_templates
+from app.core.config import settings, logger
 from app.db.base import Base, engine
+from app.paths import frontend_dir
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -28,28 +31,43 @@ app.add_middleware(
     allow_headers=settings.cors_headers,
 )
 
-# Include routers
+# Include routers (API first, then HTML pages)
 app.include_router(health_router)
 app.include_router(portfolio_router)
 app.include_router(investment_router)
+app.include_router(html_pages_router)
 
-# Mount static files
-static_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'static')
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# Static files
+_static = frontend_dir() / "static"
+if _static.is_dir():
+    app.mount("/static", StaticFiles(directory=str(_static)), name="static")
 
-# Root endpoint
-@app.get("/")
-def root():
-    """Root endpoint"""
-    logger.info("GET /")
-    return {"message": "Welcome to Portfolio Manager API"}
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """404: HTML for browsers, JSON for API and machine clients."""
+    if exc.status_code != 404:
+        return JSONResponse(
+            content={"detail": jsonable_encoder(exc.detail)},
+            status_code=exc.status_code,
+        )
+    path = request.url.path
+    if path.startswith("/api"):
+        return JSONResponse({"detail": "Not found"}, status_code=404)
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return jinja_templates.TemplateResponse(
+            "404.html",
+            {"request": request},
+            status_code=404,
+        )
+    return JSONResponse({"detail": "Not found"}, status_code=404)
 
 
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup"""
-    logger.info(f"Application starting - {settings.app_name} v{settings.app_version}")
+    logger.info("Application starting - %s v%s", settings.app_name, settings.app_version)
 
 
 @app.on_event("shutdown")
@@ -58,16 +76,9 @@ async def shutdown_event():
     logger.info("Application shutting down")
 
 
-# Error handlers
-@app.exception_handler(404)
-async def not_found_handler(request, exc):
-    """Handle 404 errors"""
-    logger.warning(f"404 error for path: {request.url.path}")
-    return {"detail": "Not found"}
-
-
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host=settings.host,

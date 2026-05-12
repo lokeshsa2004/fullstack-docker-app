@@ -37,6 +37,9 @@ def get_portfolios(
     logger.info(f"GET /portfolios - Skip: {skip}, Limit: {limit}")
     
     portfolios = PortfolioService.get_all_portfolios(db, skip=skip, limit=limit)
+    for p in portfolios:
+        PortfolioService.calculate_total_value(db, p.id)
+        db.refresh(p)
     return portfolios
 
 

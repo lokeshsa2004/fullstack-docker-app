@@ -27,8 +27,8 @@ services:
   # FastAPI Backend
   app:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: portfolio_app
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-portfolio_db}
@@ -53,6 +53,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/app
+      - ./frontend:/app/frontend
 
   # Nginx Reverse Proxy
   nginx:

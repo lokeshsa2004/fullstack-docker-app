@@ -3,18 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Portfolio Manager — track investments, portfolios, and performance in one place."
+    />
     <title>{% block title %}Portfolio Manager{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="stylesheet" href="/static/css/responsive.css" />
   </head>
   <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <nav class="navbar" aria-label="Main navigation">
       <div class="nav-container">
         <div class="nav-logo">
-          <a href="/">📊 Portfolio Manager</a>
+          <a href="/">Portfolio Manager</a>
         </div>
-        <ul class="nav-menu">
+        <button
+          type="button"
+          class="nav-toggle"
+          aria-expanded="false"
+          aria-controls="nav-menu"
+          aria-label="Open menu"
+        >
+          <span class="nav-toggle-bar" aria-hidden="true"></span>
+          <span class="nav-toggle-bar" aria-hidden="true"></span>
+          <span class="nav-toggle-bar" aria-hidden="true"></span>
+        </button>
+        <ul class="nav-menu" id="nav-menu">
           <li class="nav-item">
             <a href="/" class="nav-link">Home</a>
           </li>
@@ -24,32 +40,33 @@
           <li class="nav-item">
             <a href="/about" class="nav-link">About</a>
           </li>
+          <li class="nav-item nav-item-api">
+            <a href="/docs" class="nav-link nav-link-api" target="_blank" rel="noopener noreferrer">API docs</a>
+          </li>
         </ul>
       </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">{% block content %}{% endblock %}</main>
+    <main class="main-content" id="main">{% block content %}{% endblock %}</main>
 
-    <!-- Footer -->
     <footer class="footer">
       <div class="footer-container">
         <div class="footer-section">
           <h3>Portfolio Manager</h3>
-          <p>Manage your investment portfolio with ease</p>
+          <p>Manage your investment portfolio with a clear dashboard and a simple REST API.</p>
         </div>
         <div class="footer-section">
-          <h4>Quick Links</h4>
+          <h4>Explore</h4>
           <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/dashboard">Dashboard</a></li>
             <li><a href="/about">About</a></li>
+            <li><a href="/docs" target="_blank" rel="noopener noreferrer">API documentation</a></li>
           </ul>
         </div>
         <div class="footer-section">
-          <h4>Contact</h4>
-          <p>Email: support@portfoliomanager.com</p>
-          <p>Phone: +1 (555) 123-4567</p>
+          <h4>Health</h4>
+          <p><a href="/health">Service health</a> (load balancer)</p>
         </div>
       </div>
       <div class="footer-bottom">
@@ -57,7 +74,6 @@
       </div>
     </footer>
 
-    <!-- JavaScript -->
     <script src="/static/js/main.js"></script>
     {% block scripts %}{% endblock %}
   </body>
