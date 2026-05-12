@@ -176,6 +176,18 @@ sudo docker pull "\$DOCKER_IMAGE"
 sudo docker pull postgres:15-alpine
 sudo docker pull nginx:alpine
 
+echo "Stopping existing stack and freeing host ports..."
+sudo docker-compose -f "\$APP_DIR/docker-compose.yml" -f "\$APP_DIR/docker-compose.prod.yml" -f "\$APP_DIR/docker-compose.registry.yml" down --remove-orphans 2>/dev/null || true
+sudo docker rm -f portfolio_nginx portfolio_app portfolio_db 2>/dev/null || true
+for p in 80 443 8000 5432; do
+  ids=\$(sudo docker ps -q --filter publish=\$p 2>/dev/null || true)
+  if [ -n "\$ids" ]; then
+    echo "Stopping container(s) using host port \$p: \$ids"
+    sudo docker stop \$ids 2>/dev/null || true
+    sudo docker rm \$ids 2>/dev/null || true
+  fi
+done
+
 echo "Starting application..."
 sudo docker-compose -f "\$APP_DIR/docker-compose.yml" -f "\$APP_DIR/docker-compose.prod.yml" -f "\$APP_DIR/docker-compose.registry.yml" up -d
 
