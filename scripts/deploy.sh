@@ -49,12 +49,13 @@ fi
 
 # Check required variables
 if [ -z "$EC2_HOST" ]; then
-    log_error "EC2_HOST is not set. Please configure in .env file"
+    log_error "EC2_HOST is not set. Please configure in .env file or GitHub Actions secret"
     exit 1
 fi
 
-if [ -z "$SSH_KEY_PATH" ]; then
-    log_error "SSH_KEY_PATH is not set. Please configure in .env file"
+# Check for SSH key - either from GitHub Actions (EC2_KEY) or from .env (SSH_KEY_PATH)
+if [ -z "$EC2_KEY" ] && [ -z "$SSH_KEY_PATH" ]; then
+    log_error "EC2_KEY (GitHub Actions) or SSH_KEY_PATH (local .env) is not set"
     exit 1
 fi
 
@@ -65,8 +66,20 @@ fi
 
 # SSH options
 SSH_USER="${EC2_USER:-ec2-user}"
-SSH_KEY="${SSH_KEY_PATH}"
 EC2_ADDR="${SSH_USER}@${EC2_HOST}"
+
+# Determine SSH key source
+if [ ! -z "$EC2_KEY" ]; then
+    # GitHub Actions: write key from secret
+    SSH_KEY_FILE="/tmp/ec2_key.pem"
+    echo "$EC2_KEY" > "$SSH_KEY_FILE"
+    chmod 600 "$SSH_KEY_FILE"
+    SSH_KEY="$SSH_KEY_FILE"
+else
+    # Local: use SSH_KEY_PATH from .env
+    SSH_KEY="$SSH_KEY_PATH"
+fi
+
 SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 log_info "Deployment configuration:"

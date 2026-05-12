@@ -132,15 +132,7 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ env.IMAGE_NAME }}
           DOCKER_IMAGE_TAG: latest
         run: |
-          # Create SSH key file
-          mkdir -p ~/.ssh
-          echo "$EC2_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Add EC2 host to known hosts
-          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
-          
-          # Deploy
+          # Deploy (deploy.sh will handle EC2_KEY from environment)
           bash scripts/deploy.sh
 
       - name: Health Check

@@ -112,7 +112,7 @@ GitHub Secrets are used by the CI/CD pipeline to deploy to your EC2 instance.
 
 - **EC2_HOST**: `54.123.45.67` (your public IP)
 - **EC2_USER**: `ec2-user` (Amazon Linux) or `ubuntu` (Ubuntu)
-- **EC2_SSH_KEY**: Content of your `portfolio-manager-key.pem` file
+- **EC2_KEY**: Content of your `portfolio-manager-key.pem` file
 
 To get the SSH key content:
 

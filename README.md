@@ -397,7 +397,7 @@ The project includes a GitHub Actions workflow that:
    ```
    EC2_HOST              - Your EC2 public IP or domain
    EC2_USER              - EC2 SSH user (default: ec2-user)
-   EC2_SSH_KEY           - Private SSH key content
+   EC2_KEY               - Private SSH key content
    DB_USER               - Database user
    DB_PASSWORD           - Database password
    DB_NAME               - Database name
