@@ -210,18 +210,44 @@ log_info "Step 3: Running health checks..."
 remote_check_health() {
     ssh ${SSH_OPTS} "${EC2_ADDR}" 'bash -s' << 'REMOTE_HEALTH'
 set +e
+# Avoid proxy env breaking loopback checks (common on cloud / corporate images)
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy no_proxy NO_PROXY
+export NO_PROXY="127.0.0.1,localhost,::1"
+export no_proxy="$NO_PROXY"
+
 URL="http://127.0.0.1/health"
-if command -v curl >/dev/null 2>&1; then
-  curl -fsS --connect-timeout 5 --max-time 10 "$URL" >/dev/null 2>&1 && exit 0
-fi
-if command -v wget >/dev/null 2>&1; then
-  wget -q -O /dev/null --timeout=10 "$URL" 2>/dev/null && exit 0
-fi
-if sudo docker exec portfolio_nginx wget -q -O /dev/null --timeout=10 http://127.0.0.1/health 2>/dev/null; then
+
+# 1) Prefer checking inside the nginx container (no host proxy; BusyBox wget uses -T not --timeout)
+if sudo docker exec portfolio_nginx wget -q -O /dev/null -T 10 "$URL" 2>/dev/null; then
   exit 0
 fi
+
+# 2) Published port on the host (bypass any HTTP proxy for loopback)
+if command -v curl >/dev/null 2>&1; then
+  curl --noproxy '*' -fsS --connect-timeout 5 --max-time 12 "$URL" >/dev/null 2>&1 && exit 0
+fi
+
+# 3) GNU wget on host (-T is network timeout in seconds)
+if command -v wget >/dev/null 2>&1; then
+  wget -q -O /dev/null -T 12 "$URL" 2>/dev/null && exit 0
+fi
+
 exit 1
 REMOTE_HEALTH
+}
+
+# One-shot debug after first failed check (printed to CI log)
+remote_health_debug() {
+    ssh ${SSH_OPTS} "${EC2_ADDR}" 'bash -s' << 'REMOTE_DBG' || true
+set +x
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy
+echo "--- docker ps (nginx/app) ---"
+sudo docker ps -a --filter "name=portfolio_nginx" --filter "name=portfolio_app" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>&1
+echo "--- wget from inside nginx (stderr) ---"
+sudo docker exec portfolio_nginx wget -S -O - -T 5 http://127.0.0.1/health 2>&1 | tail -20
+echo "--- curl on host with noproxy (verbose tail) ---"
+command -v curl >/dev/null && curl --noproxy '*' -v --max-time 8 http://127.0.0.1/health 2>&1 | tail -25
+REMOTE_DBG
 }
 
 log_remote_diag() {
@@ -250,6 +276,10 @@ while [ "$attempt" -le "$max_attempts" ]; do
         break
     fi
     log_warn "Health check failed (attempt $attempt/$max_attempts)..."
+    if [ "$attempt" -eq 1 ]; then
+        log_info "First health check failed; printing one-shot connectivity debug..."
+        remote_health_debug
+    fi
     sleep 3
     attempt=$((attempt + 1))
 done
