@@ -1,0 +1,67 @@
+{% extends "base.html" %} {% block title %}Home - Portfolio Manager{% endblock
+%} {% block content %}
+<div class="hero-section">
+  <div class="hero-content">
+    <h1>Welcome to Portfolio Manager</h1>
+    <p>Your all-in-one solution for managing your investment portfolio</p>
+    <div class="hero-buttons">
+      <a href="/dashboard" class="btn btn-primary">View Dashboard</a>
+      <a href="/about" class="btn btn-secondary">Learn More</a>
+    </div>
+  </div>
+</div>
+
+<section class="features-section">
+  <div class="container">
+    <h2>Features</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Track Investments</h3>
+        <p>
+          Monitor all your investments in one place with real-time price updates
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💼</div>
+        <h3>Manage Portfolios</h3>
+        <p>
+          Create and manage multiple investment portfolios for different goals
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Analyze Performance</h3>
+        <p>Get detailed insights into your portfolio performance and metrics</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Secure & Reliable</h3>
+        <p>Your data is protected with enterprise-grade security measures</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="container">
+    <h2>By The Numbers</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3 id="stat-portfolios">0</h3>
+        <p>Active Portfolios</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-investments">0</h3>
+        <p>Total Investments</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-total-value">$0</h3>
+        <p>Portfolio Value</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %} {% block scripts %}
+<script src="/static/js/home.js"></script>
+{% endblock %}

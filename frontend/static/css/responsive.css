@@ -1,0 +1,353 @@
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablets (768px and up) */
+@media (max-width: 768px) {
+    .nav-menu {
+        gap: 20px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+
+    .features-grid,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #add-portfolio-btn {
+        width: 100%;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile (480px and down) */
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 0 10px;
+        height: 60px;
+    }
+
+    .nav-logo a {
+        font-size: 1.2rem;
+    }
+
+    .nav-menu {
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    p {
+        font-size: 0.95rem;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .hero-section {
+        padding: 60px 10px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .hero-buttons a {
+        width: 100%;
+    }
+
+    .features-section,
+    .stats-section {
+        padding: 40px 10px;
+    }
+
+    .feature-card {
+        padding: 20px;
+    }
+
+    .stat-card {
+        padding: 30px 20px;
+    }
+
+    .stat-card h3 {
+        font-size: 2rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .modal-content {
+        width: 90vw;
+        padding: 15px;
+        margin: 10px;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+
+    .modal-buttons .btn {
+        width: 100%;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    th,
+    td {
+        padding: 10px 8px;
+    }
+
+    .portfolios-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolio-card {
+        margin-bottom: 15px;
+    }
+
+    .about-content {
+        padding: 20px 10px;
+    }
+
+    .tech-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .footer-section {
+        text-align: center;
+    }
+
+    .footer-section ul {
+        padding: 0;
+    }
+
+    /* Dashboard Specific */
+    .dashboard-container {
+        padding: 20px 10px;
+    }
+
+    .dashboard-header {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+    }
+
+    .investments-table {
+        overflow-x: auto;
+        display: block;
+    }
+
+    .investments-table table {
+        min-width: 600px;
+    }
+}
+
+/* Small phones (under 350px) */
+@media (max-width: 350px) {
+    .nav-logo a {
+        font-size: 1rem;
+    }
+
+    .nav-menu {
+        gap: 5px;
+        font-size: 0.8rem;
+    }
+
+    h1 {
+        font-size: 1.25rem;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+    }
+
+    p {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    .tech-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Large screens (1200px and up) */
+@media (min-width: 1200px) {
+    .features-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .portfolios-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+/* Extra large screens (1600px and up) */
+@media (min-width: 1600px) {
+    h1 {
+        font-size: 3rem;
+    }
+
+    h2 {
+        font-size: 2.5rem;
+    }
+
+    .container {
+        max-width: 1400px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 600px) and (orientation: landscape) {
+    .navbar {
+        height: 50px;
+    }
+
+    .nav-container {
+        height: 50px;
+    }
+
+    .hero-section {
+        padding: 40px 20px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .features-section,
+    .stats-section {
+        padding: 40px 20px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        padding: 12px 24px;
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+
+    .btn:active {
+        opacity: 0.8;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .footer,
+    .btn,
+    .modal {
+        display: none;
+    }
+
+    body {
+        background-color: white;
+        color: black;
+    }
+
+    .card {
+        page-break-inside: avoid;
+        border: 1px solid black;
+    }
+}
