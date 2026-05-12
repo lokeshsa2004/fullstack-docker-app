@@ -1,0 +1,11 @@
+# EC2 / CI deploy: use pre-built image from GHCR instead of local build + bind mount.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml up -d
+# Requires DOCKER_IMAGE in .env (set by scripts/deploy.sh).
+
+version: '3.9'
+
+services:
+  app:
+    image: ${DOCKER_IMAGE}
+    build: !reset null
+    volumes: !reset null

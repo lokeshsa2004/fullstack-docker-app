@@ -119,38 +119,68 @@ EOF
 
 log_success "EC2 instance setup completed"
 
-# Step 2: Deploy application
-log_info "Step 2: Deploying application..."
+# Step 2: Package compose stack and sync to EC2
+log_info "Step 2: Packaging application configuration..."
+
+DOCKER_IMAGE="${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG:-latest}"
+DB_USER_VAL="${DB_USER:-postgres}"
+DB_PASSWORD_VAL="${DB_PASSWORD:-postgres}"
+DB_NAME_VAL="${DB_NAME:-portfolio_db}"
+
+STAGE_DIR="$(mktemp -d)"
+BUNDLE_TGZ="$(mktemp)"
+ENV_FILE="$(mktemp)"
+cleanup_stage() {
+    rm -rf "$STAGE_DIR"
+    rm -f "$BUNDLE_TGZ" "$ENV_FILE"
+}
+trap cleanup_stage EXIT
+
+mkdir -p "$STAGE_DIR/nginx/ssl" "$STAGE_DIR/frontend" "$STAGE_DIR/scripts"
+cp "$PROJECT_ROOT/docker-compose.yml" \
+    "$PROJECT_ROOT/docker-compose.prod.yml" \
+    "$PROJECT_ROOT/docker-compose.registry.yml" \
+    "$STAGE_DIR/"
+cp "$PROJECT_ROOT/nginx/nginx.conf" "$STAGE_DIR/nginx/"
+cp -r "$PROJECT_ROOT/frontend/static" "$STAGE_DIR/frontend/"
+cp "$PROJECT_ROOT/scripts/init_db.sql" "$STAGE_DIR/scripts/"
+tar -czf "$BUNDLE_TGZ" -C "$STAGE_DIR" .
+
+printf 'DB_USER=%s\n' "$DB_USER_VAL" > "$ENV_FILE"
+printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD_VAL" >> "$ENV_FILE"
+printf 'DB_NAME=%s\n' "$DB_NAME_VAL" >> "$ENV_FILE"
+printf 'DOCKER_IMAGE=%s\n' "$DOCKER_IMAGE" >> "$ENV_FILE"
+
+log_info "Uploading bundle to EC2..."
+scp ${SSH_OPTS} "$BUNDLE_TGZ" "${EC2_ADDR}:~/deploy-bundle.tgz"
+scp ${SSH_OPTS} "$ENV_FILE" "${EC2_ADDR}:~/deploy.env"
+
+log_info "Step 2: Deploying application on EC2..."
 
 ssh ${SSH_OPTS} "${EC2_ADDR}" << EOF
 #!/bin/bash
 set -e
 
 APP_DIR="/opt/portfolio-manager"
-DOCKER_IMAGE="${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG:-latest}"
+DOCKER_IMAGE="${DOCKER_IMAGE}"
 
-# Create application directory
-sudo mkdir -p \$APP_DIR
-cd \$APP_DIR
+sudo mkdir -p "\$APP_DIR"
+sudo tar -xzf ~/deploy-bundle.tgz -C "\$APP_DIR"
+sudo mv ~/deploy.env "\$APP_DIR/.env"
+sudo chmod 600 "\$APP_DIR/.env"
+rm -f ~/deploy-bundle.tgz
 
-# Download or update docker-compose.yml
-echo "Downloading docker-compose configuration..."
-# In a real scenario, you would clone from git or download from a repository
-# For now, we'll create a basic version
+cd "\$APP_DIR"
 
-# Pull latest images
 echo "Pulling latest Docker images..."
-sudo docker pull \$DOCKER_IMAGE || true
+sudo docker pull "\$DOCKER_IMAGE"
 sudo docker pull postgres:15-alpine
 sudo docker pull nginx:alpine
 
-# Start application
 echo "Starting application..."
-sudo docker-compose -f docker-compose.yml up -d
+sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml up -d
 
-# Wait for services
 sleep 10
-
 echo "Application deployed successfully"
 EOF
 
@@ -191,5 +221,5 @@ log_success "Cleanup completed"
 log_success "Deployment completed successfully!"
 log_info ""
 log_info "Application is running at: http://${EC2_HOST}"
-log_info "To view logs: ssh ${SSH_OPTS} ${EC2_ADDR} 'docker-compose logs -f'"
-log_info "To stop:      ssh ${SSH_OPTS} ${EC2_ADDR} 'docker-compose down'"
+log_info "To view logs: ssh ${SSH_OPTS} ${EC2_ADDR} 'cd /opt/portfolio-manager && sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml logs -f'"
+log_info "To stop:      ssh ${SSH_OPTS} ${EC2_ADDR} 'cd /opt/portfolio-manager && sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml down'"
