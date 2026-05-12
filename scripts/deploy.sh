@@ -170,15 +170,14 @@ sudo mv ~/deploy.env "\$APP_DIR/.env"
 sudo chmod 600 "\$APP_DIR/.env"
 rm -f ~/deploy-bundle.tgz
 
-cd "\$APP_DIR"
-
+# App dir is root-owned (sudo tar); do not cd as deploy user — use absolute compose paths.
 echo "Pulling latest Docker images..."
 sudo docker pull "\$DOCKER_IMAGE"
 sudo docker pull postgres:15-alpine
 sudo docker pull nginx:alpine
 
 echo "Starting application..."
-sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml up -d
+sudo docker-compose -f "\$APP_DIR/docker-compose.yml" -f "\$APP_DIR/docker-compose.prod.yml" -f "\$APP_DIR/docker-compose.registry.yml" up -d
 
 sleep 10
 echo "Application deployed successfully"
@@ -221,5 +220,5 @@ log_success "Cleanup completed"
 log_success "Deployment completed successfully!"
 log_info ""
 log_info "Application is running at: http://${EC2_HOST}"
-log_info "To view logs: ssh ${SSH_OPTS} ${EC2_ADDR} 'cd /opt/portfolio-manager && sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml logs -f'"
-log_info "To stop:      ssh ${SSH_OPTS} ${EC2_ADDR} 'cd /opt/portfolio-manager && sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.registry.yml down'"
+log_info "To view logs: ssh ${SSH_OPTS} ${EC2_ADDR} 'sudo docker-compose -f /opt/portfolio-manager/docker-compose.yml -f /opt/portfolio-manager/docker-compose.prod.yml -f /opt/portfolio-manager/docker-compose.registry.yml logs -f'"
+log_info "To stop:      ssh ${SSH_OPTS} ${EC2_ADDR} 'sudo docker-compose -f /opt/portfolio-manager/docker-compose.yml -f /opt/portfolio-manager/docker-compose.prod.yml -f /opt/portfolio-manager/docker-compose.registry.yml down'"

@@ -154,24 +154,16 @@ jobs:
 
       - name: Slack Notification
         if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "text": "Deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Portfolio Manager Deployment*\nStatus: ${{ job.status }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}"
-                  }
-                }
-              ]
-            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "SLACK_WEBHOOK_URL is not set; skipping Slack notification."
+            exit 0
+          fi
+          curl -fsS -X POST -H "Content-Type: application/json" \
+            -d "{\"text\":\"*Portfolio Manager Deployment*\\nStatus: ${{ job.status }}\\nBranch: ${{ github.ref }}\\nCommit: ${{ github.sha }}\"}" \
+            "$SLACK_WEBHOOK_URL"
 
   # Cleanup old images
   cleanup:
