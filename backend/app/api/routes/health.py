@@ -26,7 +26,12 @@ def readiness_check(db: Session = Depends(get_db)):
             "message": "API is ready to serve requests"
         }
     except Exception as e:
-        return {
-            "status": "not_ready",
-            "message": f"Database connection failed: {str(e)}"
-        }, 503
+        # Return 503 on database error
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            {
+                "status": "not_ready",
+                "message": f"Database connection failed: {str(e)}"
+            },
+            status_code=503
+        )
