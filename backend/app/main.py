@@ -9,7 +9,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.routes import health_router, portfolio_router, investment_router
 from app.api.routes.html_pages import router as html_pages_router, templates as jinja_templates
 from app.core.config import settings, logger
-from app.db.base import Base, engine
+from app.db.base import Base, engine, SessionLocal
+from app.db.seed import seed_database
 from app.paths import frontend_dir
 
 # Create database tables
@@ -68,6 +69,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 async def startup_event():
     """Run on application startup"""
     logger.info("Application starting - %s v%s", settings.app_name, settings.app_version)
+    
+    # Seed the database with sample data if empty
+    db = SessionLocal()
+    try:
+        seed_database(db)
+    finally:
+        db.close()
 
 
 @app.on_event("shutdown")

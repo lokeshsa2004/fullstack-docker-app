@@ -207,6 +207,15 @@
         margin-bottom: 15px;
     }
 
+    .card-footer {
+        flex-wrap: wrap;
+    }
+
+    .card-footer .btn {
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+
     .about-content {
         padding: 20px 10px;
     }

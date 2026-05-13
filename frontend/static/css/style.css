@@ -402,6 +402,7 @@ body {
 
 .card-footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     padding-top: 15px;
     border-top: 2px solid var(--border-color);
