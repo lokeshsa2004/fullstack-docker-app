@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .chart-bar { fill: #4CAF50; }
+      .chart-bar-2 { fill: #2196F3; }
+      .chart-bar-3 { fill: #FF9800; }
+    </style>
+  </defs>
+  <rect x="8" y="40" width="8" height="16" class="chart-bar" rx="1"/>
+  <rect x="20" y="24" width="8" height="32" class="chart-bar-2" rx="1"/>
+  <rect x="32" y="8" width="8" height="48" class="chart-bar-3" rx="1"/>
+  <rect x="44" y="28" width="8" height="28" class="chart-bar" rx="1"/>
+  <line x1="4" y1="56" x2="56" y2="56" stroke="#333" stroke-width="2"/>
+  <line x1="4" y1="4" x2="4" y2="56" stroke="#333" stroke-width="2"/>
+</svg>

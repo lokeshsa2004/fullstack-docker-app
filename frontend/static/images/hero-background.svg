@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <style>
+      .hero-shape { fill: #2196F3; opacity: 0.1; }
+      .hero-accent { fill: #4CAF50; opacity: 0.15; }
+    </style>
+  </defs>
+  <circle cx="40" cy="50" r="35" class="hero-shape"/>
+  <circle cx="160" cy="60" r="45" class="hero-accent"/>
+  <path d="M 20 140 Q 50 120 80 130 T 140 125 L 150 180 Q 75 195 20 180 Z" class="hero-shape"/>
+  <rect x="100" y="100" width="60" height="60" rx="8" class="hero-accent"/>
+  <circle cx="30" cy="150" r="25" class="hero-accent"/>
+</svg>

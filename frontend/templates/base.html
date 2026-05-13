@@ -8,6 +8,7 @@
       content="Portfolio Manager — track investments, portfolios, and performance in one place."
     />
     <title>{% block title %}Portfolio Manager{% endblock %}</title>
+    <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="stylesheet" href="/static/css/responsive.css" />
   </head>
@@ -17,7 +18,10 @@
     <nav class="navbar" aria-label="Main navigation">
       <div class="nav-container">
         <div class="nav-logo">
-          <a href="/">Portfolio Manager</a>
+          <a href="/">
+            <img src="/static/images/logo.svg" alt="Portfolio Manager" class="logo-img" />
+            Portfolio Manager
+          </a>
         </div>
         <button
           type="button"

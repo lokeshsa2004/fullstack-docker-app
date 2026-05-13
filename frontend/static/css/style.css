@@ -89,6 +89,12 @@ body {
     color: var(--primary-dark);
 }
 
+.logo-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
@@ -223,6 +229,19 @@ body {
     padding: 80px 20px 100px;
     max-width: 32rem;
     margin: 0 auto;
+}
+
+.error-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.error-icon-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(244, 67, 54, 0.2));
 }
 
 .error-code {
@@ -824,6 +843,17 @@ tr:hover {
 .feature-icon {
     font-size: 3rem;
     margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80px;
+}
+
+.feature-icon img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .feature-card h3 {

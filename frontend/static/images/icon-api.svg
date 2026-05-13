@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .plug-body { fill: #4CAF50; }
+      .plug-prong { fill: #4CAF50; }
+    </style>
+  </defs>
+  <circle cx="32" cy="32" r="20" class="plug-body" opacity="0.2" stroke="#4CAF50" stroke-width="1.5"/>
+  <rect x="26" y="8" width="12" height="12" rx="1" class="plug-body"/>
+  <line x1="28" y1="20" x2="28" y2="36" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <line x1="36" y1="20" x2="36" y2="36" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="28" cy="48" r="3" class="plug-prong"/>
+  <circle cx="36" cy="48" r="3" class="plug-prong"/>
+  <line x1="28" y1="36" x2="28" y2="45" stroke="#4CAF50" stroke-width="2"/>
+  <line x1="36" y1="36" x2="36" y2="45" stroke="#4CAF50" stroke-width="2"/>
+  <g>
+    <circle cx="20" cy="32" r="2.5" fill="#4CAF50" opacity="0.6"/>
+    <circle cx="44" cy="32" r="2.5" fill="#4CAF50" opacity="0.6"/>
+    <circle cx="32" cy="20" r="2.5" fill="#4CAF50" opacity="0.6"/>
+    <circle cx="32" cy="44" r="2.5" fill="#4CAF50" opacity="0.6"/>
+  </g>
+</svg>
