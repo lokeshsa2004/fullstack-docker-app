@@ -1,10 +1,12 @@
 """FastAPI Application Entry Point"""
+import time
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from prometheus_client import Counter, Histogram, generate_latest
 
 from app.api.routes import health_router, portfolio_router, investment_router
 from app.api.routes.html_pages import router as html_pages_router, templates as jinja_templates
@@ -12,6 +14,19 @@ from app.core.config import settings, logger
 from app.db.base import Base, engine, SessionLocal
 from app.db.seed import seed_database
 from app.paths import frontend_dir
+
+# Prometheus Metrics Definitions
+request_count = Counter(
+    'api_requests_total',
+    'Total API Requests',
+    ['method', 'endpoint', 'status']
+)
+
+request_duration = Histogram(
+    'api_request_duration_seconds',
+    'API Request Duration',
+    ['method', 'endpoint']
+)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -23,6 +38,28 @@ app = FastAPI(
     debug=settings.debug,
 )
 
+# Add Prometheus metrics middleware
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Middleware to track request metrics"""
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    
+    # Record metrics
+    request_count.labels(
+        method=request.method,
+        endpoint=request.url.path,
+        status=response.status_code
+    ).inc()
+    
+    request_duration.labels(
+        method=request.method,
+        endpoint=request.url.path
+    ).observe(duration)
+    
+    return response
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +68,12 @@ app.add_middleware(
     allow_methods=settings.cors_methods,
     allow_headers=settings.cors_headers,
 )
+
+# Metrics endpoint
+@app.get("/metrics")
+def metrics():
+    """Expose Prometheus metrics"""
+    return Response(generate_latest(), media_type="text/plain")
 
 # Include routers (API first, then HTML pages)
 app.include_router(health_router)
