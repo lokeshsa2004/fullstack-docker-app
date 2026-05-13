@@ -153,6 +153,10 @@ jobs:
           sudo chown "$USER:$USER" /opt/portfolio-app
           cd /opt/portfolio-app
           
+          # Force remove old containers
+          docker compose down --remove-orphans -v 2>/dev/null || true
+          docker rm -f portfolio_db portfolio_app portfolio_nginx 2>/dev/null || true
+          
           # Create .env file with actual values
           cat > .env << ENVEOF
           DB_USER=$DB_USER
@@ -169,9 +173,6 @@ jobs:
           FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
           echo "Pulling image: $FULL_IMAGE"
           docker pull "$FULL_IMAGE" || echo "Image pull failed, will try to proceed"
-          
-          # Stop existing containers
-          docker compose down || true
           
           # Create docker-compose.yml
           cat > docker-compose.yml << 'COMPOSEFILE'
