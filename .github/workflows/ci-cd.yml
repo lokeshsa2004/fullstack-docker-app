@@ -207,17 +207,18 @@ jobs:
           chmod 600 ~/.ssh/ec2-key.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           
-          # Use -o StrictHostKeyChecking and proper env var passing
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-          DB_USER='${{ secrets.DB_USER }}' \
-          DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
-          DB_NAME='${{ secrets.DB_NAME }}' \
-          REGISTRY='${{ env.REGISTRY }}' \
-          IMAGE_NAME='${{ env.IMAGE_NAME }}' \
-          GITHUB_ACTOR='${{ github.actor }}' \
-          GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}' \
-          'bash -s' << 'EOFSCRIPT'
+          # Deploy with environment variables exported
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash -s' << 'EOFSCRIPT'
           set -e
+          
+          # Export environment variables
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export REGISTRY="${{ env.REGISTRY }}"
+          export IMAGE_NAME="${{ env.IMAGE_NAME }}"
+          export GITHUB_ACTOR="${{ github.actor }}"
+          export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
           
           # Create app directory
           sudo mkdir -p /opt/portfolio-app
@@ -230,9 +231,9 @@ jobs:
           
           # Create .env file with actual values
           cat > .env << ENVEOF
-          DB_USER=$DB_USER
-          DB_PASSWORD=$DB_PASSWORD
-          DB_NAME=$DB_NAME
+          DB_USER=${DB_USER:-postgres}
+          DB_PASSWORD=${DB_PASSWORD:-postgres}
+          DB_NAME=${DB_NAME:-portfolio_db}
           DEBUG=False
           LOG_LEVEL=INFO
           ENVEOF
