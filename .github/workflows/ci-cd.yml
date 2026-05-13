@@ -121,11 +121,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2-key.pem
+          chmod 600 ~/.ssh/ec2-key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
-          EC2_KEY: ${{ secrets.EC2_KEY }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
@@ -133,26 +139,178 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ env.IMAGE_NAME }}
           DOCKER_IMAGE_TAG: latest
         run: |
-          # Deploy (deploy.sh will handle EC2_KEY from environment)
-          bash scripts/deploy.sh
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          cd /opt/portfolio-app || mkdir -p /opt/portfolio-app && cd /opt/portfolio-app
+          
+          # Create .env file
+          cat > .env << 'ENVFILE'
+          DB_USER=${DB_USER}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          DEBUG=False
+          LOG_LEVEL=INFO
+          DOCKER_REGISTRY=${DOCKER_REGISTRY}
+          DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}
+          DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}
+          ENVFILE
+          
+          # Login to registry
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+          
+          # Pull latest image
+          docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || true
+          
+          # Stop existing containers
+          docker compose down || true
+          
+          # Create minimal docker-compose.yml for deployment
+          cat > docker-compose.yml << 'COMPOSEFILE'
+          services:
+            db:
+              image: postgres:15-alpine
+              container_name: portfolio_db
+              environment:
+                POSTGRES_USER: ${DB_USER:-postgres}
+                POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+                POSTGRES_DB: ${DB_NAME:-portfolio_db}
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+              restart: unless-stopped
+              networks:
+                - portfolio_network
+
+            app:
+              image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+              container_name: portfolio_app
+              environment:
+                DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-portfolio_db}
+                DEBUG: False
+                LOG_LEVEL: INFO
+              depends_on:
+                db:
+                  condition: service_healthy
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 10s
+              restart: unless-stopped
+              networks:
+                - portfolio_network
+
+            nginx:
+              image: nginx:alpine
+              container_name: portfolio_nginx
+              ports:
+                - "80:80"
+                - "443:443"
+              volumes:
+                - ./nginx.conf:/etc/nginx/nginx.conf:ro
+              depends_on:
+                - app
+              healthcheck:
+                test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+              restart: unless-stopped
+              networks:
+                - portfolio_network
+
+          volumes:
+            postgres_data:
+              driver: local
+
+          networks:
+            portfolio_network:
+              driver: bridge
+          COMPOSEFILE
+          
+          # Create nginx config
+          mkdir -p nginx
+          cat > nginx.conf << 'NGINXFILE'
+          user nginx;
+          worker_processes auto;
+          error_log /var/log/nginx/error.log warn;
+          pid /var/run/nginx.pid;
+
+          events {
+              worker_connections 1024;
+          }
+
+          http {
+              include /etc/nginx/mime.types;
+              default_type application/octet-stream;
+              log_format main '$remote_addr - $remote_user [$time_local] "$request" $status';
+              access_log /var/log/nginx/access.log main;
+
+              upstream fastapi_backend {
+                  server app:8000;
+              }
+
+              server {
+                  listen 80;
+                  server_name _;
+
+                  location /health {
+                      access_log off;
+                      return 200 "healthy\n";
+                      add_header Content-Type text/plain;
+                  }
+
+                  location / {
+                      proxy_pass http://fastapi_backend;
+                      proxy_http_version 1.1;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_connect_timeout 60s;
+                      proxy_send_timeout 60s;
+                      proxy_read_timeout 60s;
+                  }
+              }
+          }
+          NGINXFILE
+          
+          # Start containers
+          docker compose up -d
+          
+          # Wait for services
+          echo "Waiting for services to be healthy..."
+          sleep 10
+          EOF
 
       - name: Health Check
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          max_attempts=45
+          max_attempts=60
           attempt=1
           while [ "$attempt" -le "$max_attempts" ]; do
             if curl -fsS --connect-timeout 5 --max-time 15 "http://${{ secrets.EC2_HOST }}/health" >/dev/null 2>&1; then
-              echo "Health check passed"
+              echo "✓ Health check passed"
               exit 0
             fi
-            echo "Health check failed (attempt $attempt/$max_attempts)..."
-            sleep 3
+            echo "⏳ Health check failed (attempt $attempt/$max_attempts)..."
+            sleep 2
             attempt=$((attempt + 1))
           done
-          echo "Tip: ensure EC2 security group allows inbound TCP 80 from the internet (GitHub Actions runners)."
+          echo "✗ Health check failed after all attempts"
+          echo "Debugging info:"
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "docker compose ps || true" || true
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "docker logs portfolio_app 2>&1 | tail -50 || true" || true
           exit 1
+
+      - name: Cleanup SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/ec2-key.pem
 
       - name: Slack Notification
         if: always()
@@ -163,38 +321,10 @@ jobs:
             echo "SLACK_WEBHOOK_URL is not set; skipping Slack notification."
             exit 0
           fi
-          curl -fsS -X POST -H "Content-Type: application/json" \
-            -d "{\"text\":\"*Portfolio Manager Deployment*\\nStatus: ${{ job.status }}\\nBranch: ${{ github.ref }}\\nCommit: ${{ github.sha }}\"}" \
-            "$SLACK_WEBHOOK_URL"
-
-  # Cleanup old images
-  cleanup:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete untagged images
-        run: |
-          UNTAGGED_IMAGES=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/user/packages/container/${{ github.event.repository.name }}/versions" \
-            | jq '.[] | select(.metadata.container.tags | length == 0) | .id' | tr '\n' ' ')
-          
-          if [ -n "$UNTAGGED_IMAGES" ]; then
-            for image_id in $UNTAGGED_IMAGES; do
-              curl -X DELETE \
-                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/user/packages/container/${{ github.event.repository.name }}/versions/$image_id"
-            done
+          STATUS="✓ Success"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="✗ Failed"
           fi
+          curl -fsS -X POST -H "Content-Type: application/json" \
+            -d "{\"text\":\"Portfolio Manager Deployment\n${STATUS}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\"}" \
+            "$SLACK_WEBHOOK_URL" || true

@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # PostgreSQL Database
   db:
@@ -51,9 +49,6 @@ services:
     networks:
       - portfolio_network
     restart: unless-stopped
-    volumes:
-      - ./backend:/app
-      - ./frontend:/app/frontend
 
   # Nginx Reverse Proxy
   nginx:
