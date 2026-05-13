@@ -129,42 +129,51 @@ jobs:
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy to EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USER: ${{ secrets.EC2_USER }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DOCKER_REGISTRY: ${{ env.REGISTRY }}
-          DOCKER_IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          DOCKER_IMAGE_TAG: latest
         run: |
-          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          cd /opt/portfolio-app || mkdir -p /opt/portfolio-app && cd /opt/portfolio-app
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2-key.pem
+          chmod 600 ~/.ssh/ec2-key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           
-          # Create .env file
-          cat > .env << 'ENVFILE'
-          DB_USER=${DB_USER}
-          DB_PASSWORD=${DB_PASSWORD}
-          DB_NAME=${DB_NAME}
+          # Use -o StrictHostKeyChecking and proper env var passing
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+          DB_USER='${{ secrets.DB_USER }}' \
+          DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+          DB_NAME='${{ secrets.DB_NAME }}' \
+          REGISTRY='${{ env.REGISTRY }}' \
+          IMAGE_NAME='${{ env.IMAGE_NAME }}' \
+          GITHUB_ACTOR='${{ github.actor }}' \
+          GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}' \
+          'bash -s' << 'EOFSCRIPT'
+          set -e
+          
+          # Create app directory
+          sudo mkdir -p /opt/portfolio-app
+          sudo chown "$USER:$USER" /opt/portfolio-app
+          cd /opt/portfolio-app
+          
+          # Create .env file with actual values
+          cat > .env << ENVEOF
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_NAME=$DB_NAME
           DEBUG=False
           LOG_LEVEL=INFO
-          DOCKER_REGISTRY=${DOCKER_REGISTRY}
-          DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}
-          DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}
-          ENVFILE
+          ENVEOF
           
           # Login to registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+          echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin || true
           
           # Pull latest image
-          docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || true
+          FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
+          echo "Pulling image: $FULL_IMAGE"
+          docker pull "$FULL_IMAGE" || echo "Image pull failed, will try to proceed"
           
           # Stop existing containers
           docker compose down || true
           
-          # Create minimal docker-compose.yml for deployment
+          # Create docker-compose.yml
           cat > docker-compose.yml << 'COMPOSEFILE'
           services:
             db:
@@ -186,7 +195,7 @@ jobs:
                 - portfolio_network
 
             app:
-              image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+              image: ${REGISTRY}/${IMAGE_NAME}:latest
               container_name: portfolio_app
               environment:
                 DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-portfolio_db}
@@ -234,7 +243,6 @@ jobs:
           COMPOSEFILE
           
           # Create nginx config
-          mkdir -p nginx
           cat > nginx.conf << 'NGINXFILE'
           user nginx;
           worker_processes auto;
@@ -272,7 +280,7 @@ jobs:
                       proxy_set_header X-Real-IP $remote_addr;
                       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                       proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_connect_timeout 60s;
+                      proxy_connect_timeout 60s;
                       proxy_send_timeout 60s;
                       proxy_read_timeout 60s;
                   }
@@ -286,25 +294,25 @@ jobs:
           # Wait for services
           echo "Waiting for services to be healthy..."
           sleep 10
-          EOF
+          EOFSCRIPT
 
       - name: Health Check
         run: |
           max_attempts=60
           attempt=1
           while [ "$attempt" -le "$max_attempts" ]; do
+            echo "Health check attempt $attempt/$max_attempts..."
             if curl -fsS --connect-timeout 5 --max-time 15 "http://${{ secrets.EC2_HOST }}/health" >/dev/null 2>&1; then
               echo "✓ Health check passed"
               exit 0
             fi
-            echo "⏳ Health check failed (attempt $attempt/$max_attempts)..."
+            echo "⏳ Waiting..."
             sleep 2
             attempt=$((attempt + 1))
           done
           echo "✗ Health check failed after all attempts"
-          echo "Debugging info:"
-          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "docker compose ps || true" || true
-          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "docker logs portfolio_app 2>&1 | tail -50 || true" || true
+          echo "Debugging: Checking container status..."
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "cd /opt/portfolio-app && docker compose ps && docker compose logs --tail=50 || true" || true
           exit 1
 
       - name: Cleanup SSH
