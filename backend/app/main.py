@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import Counter, Histogram, Gauge, generate_latest
 
 from app.api.routes import health_router, portfolio_router, investment_router
 from app.api.routes.html_pages import router as html_pages_router, templates as jinja_templates
@@ -28,6 +28,27 @@ request_duration = Histogram(
     ['method', 'endpoint']
 )
 
+error_count = Counter(
+    'api_errors_total',
+    'Total API Errors',
+    ['method', 'endpoint', 'status']
+)
+
+inprogress_requests = Gauge(
+    'api_inprogress_requests',
+    'Number of in-progress requests'
+)
+
+portfolio_created_total = Counter(
+    'portfolio_created_total',
+    'Total portfolios created'
+)
+
+investment_added_total = Counter(
+    'investment_added_total',
+    'Total investments added'
+)
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
@@ -42,23 +63,41 @@ app = FastAPI(
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
     """Middleware to track request metrics"""
+    # Skip metrics for /metrics endpoint to avoid self-referential metrics
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    
+    inprogress_requests.inc()
     start_time = time.time()
-    response = await call_next(request)
-    duration = time.time() - start_time
     
-    # Record metrics
-    request_count.labels(
-        method=request.method,
-        endpoint=request.url.path,
-        status=response.status_code
-    ).inc()
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        # Record request count and duration
+        request_count.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            status=response.status_code
+        ).inc()
+        
+        request_duration.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).observe(duration)
+        
+        # Track errors (4xx and 5xx status codes)
+        if response.status_code >= 400:
+            error_count.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status=response.status_code
+            ).inc()
+        
+        return response
     
-    request_duration.labels(
-        method=request.method,
-        endpoint=request.url.path
-    ).observe(duration)
-    
-    return response
+    finally:
+        inprogress_requests.dec()
 
 # Add CORS middleware
 app.add_middleware(
