@@ -78,12 +78,12 @@ log_info "Running database migrations..."
 docker-compose exec -T app alembic upgrade head || true
 
 # Check API health
-log_info "Checking API health..."
+log_info "Checking API health through nginx proxy..."
 max_attempts=30
 attempt=1
 while [ $attempt -le $max_attempts ]; do
-    if curl -f http://localhost:8000/health &> /dev/null; then
-        log_success "API is healthy"
+    if curl -f http://localhost/health &> /dev/null; then
+        log_success "API health check passed (via nginx)"
         break
     fi
     log_warn "API not ready (attempt $attempt/$max_attempts)..."

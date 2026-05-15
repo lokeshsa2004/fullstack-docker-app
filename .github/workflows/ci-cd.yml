@@ -295,13 +295,16 @@ jobs:
                 - "443:443"
               volumes:
                 - ./nginx.conf:/etc/nginx/nginx.conf:ro
+                - ./frontend/static:/usr/share/nginx/html/static:ro
               depends_on:
-                - app
+                app:
+                  condition: service_healthy
               healthcheck:
-                test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+                test: ["CMD", "curl", "-f", "http://localhost/health"]
                 interval: 30s
                 timeout: 10s
                 retries: 3
+                start_period: 30s
               restart: unless-stopped
               networks:
                 - portfolio_network
@@ -324,6 +327,8 @@ jobs:
 
           events {
               worker_connections 1024;
+              use epoll;
+              multi_accept on;
           }
 
           http {
@@ -332,20 +337,63 @@ jobs:
               log_format main '$remote_addr - $remote_user [$time_local] "$request" $status';
               access_log /var/log/nginx/access.log main;
 
+              sendfile on;
+              tcp_nopush on;
+              tcp_nodelay on;
+              keepalive_timeout 65;
+              types_hash_max_size 2048;
+              client_max_body_size 100M;
+
+              gzip on;
+              gzip_vary on;
+              gzip_proxied any;
+              gzip_comp_level 6;
+              gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml;
+
               upstream fastapi_backend {
-                  server app:8000;
+                  least_conn;
+                  server app:8000 max_fails=3 fail_timeout=30s;
+                  keepalive 32;
               }
 
               server {
-                  listen 80;
+                  listen 80 default_server;
+                  listen [::]:80 default_server;
                   server_name _;
 
+                  # Health check endpoint - proxy to backend for real health checks
                   location /health {
+                      proxy_pass http://fastapi_backend/health;
+                      proxy_http_version 1.1;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                       access_log off;
-                      return 200 "healthy\n";
-                      add_header Content-Type text/plain;
                   }
 
+                  # Static files
+                  location /static/ {
+                      alias /usr/share/nginx/html/static/;
+                      expires 30d;
+                      add_header Cache-Control "public, immutable";
+                      access_log off;
+                  }
+
+                  # API endpoints
+                  location /api/ {
+                      proxy_pass http://fastapi_backend;
+                      proxy_http_version 1.1;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                      proxy_set_header Connection "";
+                      proxy_connect_timeout 60s;
+                      proxy_send_timeout 60s;
+                      proxy_read_timeout 60s;
+                  }
+
+                  # HTML pages - FastAPI
                   location / {
                       proxy_pass http://fastapi_backend;
                       proxy_http_version 1.1;
@@ -357,6 +405,12 @@ jobs:
                       proxy_send_timeout 60s;
                       proxy_read_timeout 60s;
                   }
+
+                  # Security headers
+                  add_header X-Frame-Options "SAMEORIGIN" always;
+                  add_header X-Content-Type-Options "nosniff" always;
+                  add_header X-XSS-Protection "1; mode=block" always;
+                  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
               }
           }
           NGINXFILE
