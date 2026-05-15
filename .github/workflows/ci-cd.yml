@@ -321,6 +321,7 @@ jobs:
           cat > nginx.conf << 'NGINXFILE'
           user nginx;
           worker_processes auto;
+
           error_log /var/log/nginx/error.log warn;
           pid /var/run/nginx.pid;
 
@@ -333,21 +334,52 @@ jobs:
           http {
               include /etc/nginx/mime.types;
               default_type application/octet-stream;
-              log_format main '$remote_addr - $remote_user [$time_local] "$request" $status';
+
+              log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                              '$status $body_bytes_sent "$http_referer" '
+                              '"$http_user_agent" "$http_x_forwarded_for"';
+
               access_log /var/log/nginx/access.log main;
 
               sendfile on;
               tcp_nopush on;
               tcp_nodelay on;
+
               keepalive_timeout 65;
               types_hash_max_size 2048;
               client_max_body_size 100M;
+
+              # ============================================================
+              # GZIP COMPRESSION
+              # ============================================================
 
               gzip on;
               gzip_vary on;
               gzip_proxied any;
               gzip_comp_level 6;
-              gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml;
+
+              gzip_types
+                  text/plain
+                  text/css
+                  text/xml
+                  text/javascript
+                  application/json
+                  application/javascript
+                  application/xml+rss
+                  application/rss+xml
+                  application/atom+xml
+                  image/svg+xml;
+
+              # ============================================================
+              # RATE LIMITING
+              # ============================================================
+
+              limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+              limit_req_zone $binary_remote_addr zone=general_limit:10m rate=30r/s;
+
+              # ============================================================
+              # FASTAPI BACKEND
+              # ============================================================
 
               upstream fastapi_backend {
                   least_conn;
@@ -355,61 +387,186 @@ jobs:
                   keepalive 32;
               }
 
+              # ============================================================
+              # MAIN SERVER
+              # ============================================================
+
               server {
                   listen 80 default_server;
                   listen [::]:80 default_server;
+
                   server_name _;
 
-                  # Health check endpoint - proxy to backend for real health checks
+                  # ========================================================
+                  # HEALTH CHECK
+                  # ========================================================
+
                   location /health {
                       proxy_pass http://fastapi_backend/health;
+
                       proxy_http_version 1.1;
+
                       proxy_set_header Host $host;
                       proxy_set_header X-Real-IP $remote_addr;
                       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+
                       access_log off;
                   }
 
-                  # Static files
+                  # ========================================================
+                  # PROMETHEUS METRICS
+                  # ========================================================
+
+                  location /metrics {
+                      proxy_pass http://fastapi_backend/metrics;
+
+                      proxy_http_version 1.1;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+
+                      access_log off;
+                  }
+
+                  # ========================================================
+                  # STATIC FILES
+                  # ========================================================
+
                   location /static/ {
-                      alias /usr/share/nginx/html/static/;
+                      proxy_pass http://fastapi_backend/static/;
+
+                      proxy_http_version 1.1;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+
                       expires 30d;
                       add_header Cache-Control "public, immutable";
-                      access_log off;
                   }
 
-                  # API endpoints
+                  # ========================================================
+                  # API ROUTES
+                  # ========================================================
+
                   location /api/ {
+
+                      limit_req zone=api_limit burst=20 nodelay;
+
                       proxy_pass http://fastapi_backend;
+
                       proxy_http_version 1.1;
+
                       proxy_set_header Host $host;
                       proxy_set_header X-Real-IP $remote_addr;
                       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                       proxy_set_header X-Forwarded-Proto $scheme;
+                      proxy_set_header X-Forwarded-Host $server_name;
+
                       proxy_set_header Connection "";
+
                       proxy_connect_timeout 60s;
                       proxy_send_timeout 60s;
                       proxy_read_timeout 60s;
+
+                      proxy_buffering on;
+                      proxy_buffer_size 4k;
+                      proxy_buffers 8 4k;
                   }
 
-                  # HTML pages - FastAPI
-                  location / {
+                  # ========================================================
+                  # FASTAPI DOCS
+                  # ========================================================
+
+                  location /docs {
                       proxy_pass http://fastapi_backend;
                       proxy_http_version 1.1;
+
                       proxy_set_header Host $host;
                       proxy_set_header X-Real-IP $remote_addr;
                       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                       proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+
+                  location /openapi.json {
+                      proxy_pass http://fastapi_backend;
+                      proxy_http_version 1.1;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+
+                  location /redoc {
+                      proxy_pass http://fastapi_backend;
+                      proxy_http_version 1.1;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+
+                  # ========================================================
+                  # FRONTEND HTML PAGES
+                  # ========================================================
+
+                  location / {
+
+                      limit_req zone=general_limit burst=30 nodelay;
+
+                      proxy_pass http://fastapi_backend;
+
+                      proxy_http_version 1.1;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                      proxy_set_header X-Forwarded-Host $server_name;
+
+                      proxy_set_header Connection "";
+
                       proxy_connect_timeout 60s;
                       proxy_send_timeout 60s;
                       proxy_read_timeout 60s;
+
+                      proxy_buffering on;
+                      proxy_buffer_size 8k;
+                      proxy_buffers 16 8k;
                   }
 
-                  # Security headers
+                  # ========================================================
+                  # SECURITY HEADERS
+                  # ========================================================
+
                   add_header X-Frame-Options "SAMEORIGIN" always;
                   add_header X-Content-Type-Options "nosniff" always;
                   add_header X-XSS-Protection "1; mode=block" always;
                   add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+                  add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+                  # ========================================================
+                  # ERROR PAGES
+                  # ========================================================
+
+                  error_page 404 /404.html;
+                  error_page 500 502 503 504 /50x.html;
+
+                  location = /404.html {
+                      root /usr/share/nginx/html;
+                      internal;
+                  }
+
+                  location = /50x.html {
+                      root /usr/share/nginx/html;
+                      internal;
+                  }
               }
           }
           NGINXFILE
