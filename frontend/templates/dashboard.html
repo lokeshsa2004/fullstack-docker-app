@@ -1,8 +1,5 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard — Portfolio Manager{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Dashboard — Portfolio Manager{%
+endblock %} {% block content %}
 <div class="dashboard-container">
   <div class="dashboard-header">
     <div>
@@ -12,96 +9,235 @@
         <span>Dashboard</span>
       </p>
       <h1>Dashboard</h1>
-      <p class="page-subtitle">Portfolios and investments loaded from the API.</p>
+      <p class="page-subtitle">
+        Portfolios and investments loaded from the API.
+      </p>
     </div>
-    <button type="button" class="btn btn-primary" id="add-portfolio-btn">+ New portfolio</button>
+    <button type="button" class="btn btn-primary" id="add-portfolio-btn">
+      + New portfolio
+    </button>
   </div>
 
-  <div id="success-message" class="success-message page-alert" style="display: none" role="status"></div>
+  <div
+    id="success-message"
+    class="success-message page-alert"
+    style="display: none"
+    role="status"
+  ></div>
 
   <div class="loading" id="loading" style="display: none">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading…</p>
   </div>
 
-  <div class="error-message" id="error-message" style="display: none" role="alert"></div>
+  <div
+    class="error-message"
+    id="error-message"
+    style="display: none"
+    role="alert"
+  ></div>
+
+  <!-- Metrics Dashboard Section -->
+  <section class="metrics-dashboard" id="metrics-dashboard">
+    <div class="metrics-header">
+      <h2>System Metrics & Analytics</h2>
+      <button
+        type="button"
+        class="metrics-refresh-btn"
+        id="metrics-refresh-btn"
+      >
+        Refresh Metrics
+      </button>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div id="system-metrics"></div>
+
+    <!-- Charts Grid -->
+    <div class="charts-container">
+      <!-- Error Rate Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-title">Error Rate Distribution</div>
+        <div class="chart-canvas-container">
+          <canvas id="error-rate-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Request Summary Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-title">Request Summary</div>
+        <div class="chart-canvas-container">
+          <canvas id="request-summary-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Database Metrics Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-title">Database Objects</div>
+        <div class="chart-canvas-container">
+          <canvas id="database-metrics-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Response Time Indicator -->
+      <div id="response-time-indicator"></div>
+    </div>
+  </section>
 
   <section class="portfolios-section">
     <h2>Your portfolios</h2>
-    <p id="no-portfolios" class="empty-state">No portfolios yet. Create one to get started.</p>
+    <p id="no-portfolios" class="empty-state">
+      No portfolios yet. Create one to get started.
+    </p>
     <div id="portfolios-container" class="portfolios-grid"></div>
   </section>
 
-  <div id="portfolio-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div
+    id="portfolio-modal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
     <div class="modal-content">
-      <button type="button" class="close-modal" aria-label="Close">&times;</button>
+      <button type="button" class="close-modal" aria-label="Close">
+        &times;
+      </button>
       <h2 id="modal-title">Create new portfolio</h2>
       <form id="portfolio-form">
         <div class="form-group">
           <label for="portfolio-name">Portfolio name *</label>
-          <input type="text" id="portfolio-name" required placeholder="e.g., My retirement fund" />
+          <input
+            type="text"
+            id="portfolio-name"
+            required
+            placeholder="e.g., My retirement fund"
+          />
         </div>
         <div class="form-group">
           <label for="portfolio-owner">Owner name *</label>
-          <input type="text" id="portfolio-owner" required placeholder="e.g., Jane Doe" />
+          <input
+            type="text"
+            id="portfolio-owner"
+            required
+            placeholder="e.g., Jane Doe"
+          />
         </div>
         <div class="form-group">
           <label for="portfolio-description">Description</label>
-          <textarea id="portfolio-description" placeholder="Optional description…"></textarea>
+          <textarea
+            id="portfolio-description"
+            placeholder="Optional description…"
+          ></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn btn-secondary" id="cancel-portfolio">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="cancel-portfolio">
+            Cancel
+          </button>
           <button type="submit" class="btn btn-primary">Save portfolio</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="investment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="investment-modal-title">
+  <div
+    id="investment-modal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="investment-modal-title"
+  >
     <div class="modal-content">
-      <button type="button" class="close-modal" aria-label="Close">&times;</button>
+      <button type="button" class="close-modal" aria-label="Close">
+        &times;
+      </button>
       <h2 id="investment-modal-title">Add investment</h2>
       <form id="investment-form">
         <input type="hidden" id="investment-portfolio-id" />
         <input type="hidden" id="investment-id" />
         <div class="form-group">
           <label for="investment-ticker">Ticker symbol *</label>
-          <input type="text" id="investment-ticker" required placeholder="e.g., AAPL" maxlength="10" />
+          <input
+            type="text"
+            id="investment-ticker"
+            required
+            placeholder="e.g., AAPL"
+            maxlength="10"
+          />
         </div>
         <div class="form-group">
           <label for="investment-name">Company name *</label>
-          <input type="text" id="investment-name" required placeholder="e.g., Apple Inc." />
+          <input
+            type="text"
+            id="investment-name"
+            required
+            placeholder="e.g., Apple Inc."
+          />
         </div>
         <div class="form-group">
           <label for="investment-sector">Sector</label>
-          <input type="text" id="investment-sector" placeholder="e.g., Technology" />
+          <input
+            type="text"
+            id="investment-sector"
+            placeholder="e.g., Technology"
+          />
         </div>
         <div class="form-group">
           <label for="investment-quantity">Quantity *</label>
-          <input type="number" id="investment-quantity" required step="0.01" min="0" placeholder="e.g., 10" />
+          <input
+            type="number"
+            id="investment-quantity"
+            required
+            step="0.01"
+            min="0"
+            placeholder="e.g., 10"
+          />
         </div>
         <div class="form-group">
           <label for="investment-purchase-price">Purchase price ($) *</label>
-          <input type="number" id="investment-purchase-price" required step="0.01" min="0" placeholder="e.g., 150.50" />
+          <input
+            type="number"
+            id="investment-purchase-price"
+            required
+            step="0.01"
+            min="0"
+            placeholder="e.g., 150.50"
+          />
         </div>
         <div class="form-group">
           <label for="investment-current-price">Current price ($) *</label>
-          <input type="number" id="investment-current-price" required step="0.01" min="0" placeholder="e.g., 175.80" />
+          <input
+            type="number"
+            id="investment-current-price"
+            required
+            step="0.01"
+            min="0"
+            placeholder="e.g., 175.80"
+          />
         </div>
         <div class="form-group">
           <label for="investment-notes">Notes</label>
-          <textarea id="investment-notes" placeholder="Optional notes…"></textarea>
+          <textarea
+            id="investment-notes"
+            placeholder="Optional notes…"
+          ></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn btn-secondary" id="cancel-investment">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="cancel-investment"
+          >
+            Cancel
+          </button>
           <button type="submit" class="btn btn-primary">Save investment</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
+<link rel="stylesheet" href="/static/css/metrics.css" />
+<script src="/static/js/metrics.js"></script>
 <script src="/static/js/dashboard.js"></script>
 {% endblock %}

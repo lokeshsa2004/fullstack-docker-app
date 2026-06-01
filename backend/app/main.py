@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 
 from app.api.routes import health_router, portfolio_router, investment_router
+from app.api.routes.metrics import router as metrics_router
 from app.api.routes.html_pages import router as html_pages_router, templates as jinja_templates
 from app.core.config import settings, logger
 from app.db.base import Base, engine, SessionLocal
@@ -137,6 +138,7 @@ def meta():
 app.include_router(health_router)
 app.include_router(portfolio_router)
 app.include_router(investment_router)
+app.include_router(metrics_router)
 app.include_router(html_pages_router)
 
 # Static files
