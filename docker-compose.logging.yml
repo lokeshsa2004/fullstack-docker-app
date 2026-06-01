@@ -1,0 +1,43 @@
+# Docker Compose Override for Demo & Logging
+# Usage: docker compose -f docker-compose.yml -f docker-compose.logging.yml up -d
+
+version: '3.8'
+
+services:
+  db:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "environment=production,service=portfolio_db"
+    labels:
+      - "com.example.description=Portfolio Database"
+      - "com.example.version=1.0"
+
+  app:
+    environment:
+      # These are set by the build script with -e or docker compose -e
+      # GIT_COMMIT: injected at runtime
+      # BUILD_TIME: injected at runtime
+      LOG_LEVEL: "INFO"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "environment=production,service=portfolio_app"
+    labels:
+      - "com.example.description=Portfolio FastAPI Application"
+      - "com.example.version=1.0"
+
+  nginx:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "environment=production,service=portfolio_nginx"
+    labels:
+      - "com.example.description=Nginx Reverse Proxy"
+      - "com.example.version=alpine"

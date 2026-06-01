@@ -178,6 +178,9 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp || format('{0:yyyy-MM-ddTHH:mm:ssZ}', now()) }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
@@ -274,11 +277,13 @@ jobs:
                 DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-portfolio_db}
                 DEBUG: False
                 LOG_LEVEL: INFO
+                GIT_COMMIT: ${{ github.sha }}
+                BUILD_TIME: ${{ github.event.head_commit.timestamp || format('{0:yyyy-MM-ddTHH:mm:ssZ}', now()) }}
               depends_on:
                 db:
                   condition: service_healthy
               healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+                test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
                 interval: 30s
                 timeout: 10s
                 retries: 3
@@ -299,7 +304,7 @@ jobs:
                 app:
                   condition: service_healthy
               healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost/health"]
+                test: ["CMD", "curl", "-f", "http://127.0.0.1/health"]
                 interval: 30s
                 timeout: 10s
                 retries: 3

@@ -1,5 +1,7 @@
 """FastAPI Application Entry Point"""
 import time
+import os
+import logging
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +16,11 @@ from app.core.config import settings, logger
 from app.db.base import Base, engine, SessionLocal
 from app.db.seed import seed_database
 from app.paths import frontend_dir
+
+# Build metadata from environment (injected by Docker)
+GIT_COMMIT = os.getenv("GIT_COMMIT", "dev-local")
+BUILD_TIME = os.getenv("BUILD_TIME", "dev-build")
+APP_START_TIME = int(time.time())
 
 # Prometheus Metrics Definitions
 request_count = Counter(
@@ -114,6 +121,18 @@ def metrics():
     """Expose Prometheus metrics"""
     return Response(generate_latest(), media_type="text/plain")
 
+# Provenance endpoint
+@app.get("/meta")
+def meta():
+    """Return build metadata (commit, build time, startup time)"""
+    return {
+        "commit": GIT_COMMIT,
+        "build_time": BUILD_TIME,
+        "app_start_time": APP_START_TIME,
+        "app_version": settings.app_version,
+        "app_name": settings.app_name,
+    }
+
 # Include routers (API first, then HTML pages)
 app.include_router(health_router)
 app.include_router(portfolio_router)
@@ -150,6 +169,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup"""
+    # Log startup with commit and build metadata
+    logger.info(f"APP_START COMMIT={GIT_COMMIT} BUILD_TIME={BUILD_TIME} TS={APP_START_TIME}")
     logger.info("Application starting - %s v%s", settings.app_name, settings.app_version)
     
     # Seed the database with sample data if empty

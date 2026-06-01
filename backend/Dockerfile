@@ -25,6 +25,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Build arguments for provenance tracking
+ARG GIT_COMMIT=dev
+ARG BUILD_TIME=dev
+
+# Set environment variables from build args
+ENV GIT_COMMIT=$GIT_COMMIT
+ENV BUILD_TIME=$BUILD_TIME
+
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
@@ -54,3 +62,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # CMD uses uvicorn from /usr/local/bin (installed globally via pip)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
