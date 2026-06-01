@@ -1,5 +1,6 @@
 """Health check endpoint"""
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 
@@ -20,7 +21,7 @@ def readiness_check(db: Session = Depends(get_db)):
     """Readiness check endpoint - verifies database connectivity"""
     try:
         # Try to execute a simple query
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {
             "status": "ready",
             "message": "API is ready to serve requests"
