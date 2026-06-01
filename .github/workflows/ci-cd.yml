@@ -180,7 +180,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             GIT_COMMIT=${{ github.sha }}
-            BUILD_TIME=${{ github.event.head_commit.timestamp || format('{0:yyyy-MM-ddTHH:mm:ssZ}', now()) }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
@@ -278,7 +278,7 @@ jobs:
                 DEBUG: False
                 LOG_LEVEL: INFO
                 GIT_COMMIT: ${{ github.sha }}
-                BUILD_TIME: ${{ github.event.head_commit.timestamp || format('{0:yyyy-MM-ddTHH:mm:ssZ}', now()) }}
+                BUILD_TIME: ${{ github.event.head_commit.timestamp }}
               depends_on:
                 db:
                   condition: service_healthy
