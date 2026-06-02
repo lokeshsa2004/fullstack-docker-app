@@ -1089,7 +1089,7 @@ tr:hover {
     animation: slideUp 0.3s ease;
 
     max-height: 70vh;
-    height: 70vh;
+    height: 90vh;
     overflow-y: scroll;
 
     box-sizing: border-box;
@@ -1188,9 +1188,9 @@ tr:hover {
     }
 
     .modal-content {
-        width: 100%;
+        width: 95%;
         max-height: 70%;
-        height: 70vh;
+        height: 90vh;
         padding: 20px;
     }
 
