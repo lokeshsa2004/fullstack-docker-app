@@ -152,7 +152,7 @@ function updateSystemMetrics(metrics) {
       </div>
       <div class="metric-card">
         <div class="metric-label">Avg Response Time</div>
-        <div class="metric-value">${(req.avg_response_time_seconds * 1000).toFixed(2)}ms</div>
+        <div class="metric-value">${(req.avg_response_time_seconds).toFixed(2)}s</div>
         <div class="metric-subtext">Uptime: ${formatDuration(sys.uptime_seconds || 0)}</div>
       </div>
     </div>
