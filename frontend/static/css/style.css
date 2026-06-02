@@ -1082,11 +1082,12 @@ tr:hover {
     box-shadow: var(--shadow-lg);
 
     width: min(600px, 95vw);
+
     position: relative;
 
     animation: slideUp 0.3s ease;
 
-    max-height: 90vh;
+    max-height: 70vh;
     overflow-y: scroll;
 
     box-sizing: border-box;
