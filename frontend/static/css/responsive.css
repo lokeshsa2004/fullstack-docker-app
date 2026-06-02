@@ -75,20 +75,47 @@
 
     .modal-content {
         width: 95%;
+        max-width: 100%;
         padding: 20px;
     }
 
     .dashboard-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .dashboard-header > div {
+        flex: 1;
+        width: 100%;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.75rem;
     }
 
     #add-portfolio-btn {
         width: 100%;
+        flex-shrink: 0;
+    }
+
+    .portfolios-grid {
+        grid-template-columns: 1fr;
     }
 
     .footer-container {
         grid-template-columns: 1fr;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px;
+    }
+
+    .modal-buttons {
+        flex-direction: row;
+        gap: 12px;
     }
 }
 
@@ -172,24 +199,63 @@
         font-size: 16px; /* Prevents zoom on iOS */
     }
 
+    .modal {
+        padding: 10px;
+    }
+
+    .modal.active {
+        padding-top: 10px;
+    }
+
     .modal-content {
-        width: 90vw;
-        padding: 20px;
-        margin: 10px;
-        max-height: 85vh;
-        overflow-y: auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 16px;
+        max-height: calc(100vh - 20px);
+        margin: 0;
+        border-radius: var(--border-radius);
+    }
+
+    .modal-content h2 {
+        font-size: 1.25rem;
+        margin-bottom: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 10px;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .form-group textarea {
+        min-height: 60px;
+        max-height: 80px;
     }
 
     .modal-buttons {
         flex-direction: column;
-        margin: 0 -20px -20px -20px;
-        padding-left: 20px;
-        padding-right: 20px;
+        gap: 8px;
+        margin: 16px -16px -16px -16px;
+        padding: 12px 16px;
+        padding-bottom: 16px;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
     }
 
     .modal-buttons .btn {
         width: 100%;
         flex: 1;
+        padding: 10px 16px;
+        font-size: 0.9rem;
     }
 
     .table {
@@ -240,16 +306,27 @@
 
     /* Dashboard Specific */
     .dashboard-container {
-        padding: 20px 10px;
+        padding: 16px 10px;
     }
 
     .dashboard-header {
         gap: 10px;
         margin-bottom: 20px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-header > div {
+        width: 100%;
     }
 
     .dashboard-header h1 {
         margin: 0;
+        font-size: 1.5rem;
+    }
+
+    #add-portfolio-btn {
+        width: 100%;
     }
 
     .investments-table {
@@ -259,6 +336,10 @@
 
     .investments-table table {
         min-width: 600px;
+    }
+
+    #investment-form {
+        max-height: calc(100vh - 280px);
     }
 }
 
