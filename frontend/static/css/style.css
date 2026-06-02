@@ -458,8 +458,8 @@ body {
     max-width: 500px;
     position: relative;
     animation: slideUp 0.3s ease;
-    max-height: 70vh;
-    height: 70vh;
+    max-height: 90vh;
+    height: 90vh;
     overflow-y: auto;
 }
 
@@ -1088,7 +1088,7 @@ tr:hover {
 
     animation: slideUp 0.3s ease;
 
-    max-height: 70vh;
+    max-height: 90vh;
     height: 90vh;
     overflow-y: scroll;
 
@@ -1189,7 +1189,7 @@ tr:hover {
 
     .modal-content {
         width: 95%;
-        max-height: 70%;
+        max-height: 90%;
         height: 90vh;
         padding: 20px;
     }
