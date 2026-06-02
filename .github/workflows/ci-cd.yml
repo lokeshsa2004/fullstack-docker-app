@@ -339,7 +339,7 @@ jobs:
               driver: bridge
           COMPOSEFILE
           
-          # Create nginx config
+          # Create nginx configg
           cat > nginx.conf << 'NGINXFILE'
           user nginx;
           worker_processes auto;
@@ -351,7 +351,7 @@ jobs:
               worker_connections 1024;
               use epoll;
               multi_accept on;
-          }
+            }
 
           http {
               include /etc/nginx/mime.types;
