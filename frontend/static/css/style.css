@@ -350,7 +350,7 @@ body {
    ======================================== */
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
 }
@@ -458,6 +458,8 @@ body {
     max-width: 500px;
     position: relative;
     animation: slideUp 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .close-modal {
@@ -490,7 +492,15 @@ body {
     gap: 10px;
     justify-content: flex-end;
     padding-top: 20px;
+    padding-bottom: 0;
     border-top: 2px solid var(--border-color);
+    position: sticky;
+    bottom: 0;
+    background-color: var(--surface-color);
+    margin: 0 -30px -30px -30px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 /* ========================================

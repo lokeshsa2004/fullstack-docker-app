@@ -174,16 +174,22 @@
 
     .modal-content {
         width: 90vw;
-        padding: 15px;
+        padding: 20px;
         margin: 10px;
+        max-height: 85vh;
+        overflow-y: auto;
     }
 
     .modal-buttons {
         flex-direction: column;
+        margin: 0 -20px -20px -20px;
+        padding-left: 20px;
+        padding-right: 20px;
     }
 
     .modal-buttons .btn {
         width: 100%;
+        flex: 1;
     }
 
     .table {
@@ -284,15 +290,25 @@
         font-size: 0.8rem;
     }
 
+    .form-group {
+        margin-bottom: 12px;
+    }
+
     .form-group label {
         font-size: 0.9rem;
+        margin-bottom: 6px;
     }
 
     .form-group input,
     .form-group textarea,
     .form-group select {
-        padding: 8px 10px;
+        padding: 10px 10px;
         font-size: 14px;
+    }
+
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     .card {
