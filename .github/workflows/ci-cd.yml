@@ -190,6 +190,7 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             BUILD_TIME=${{ github.event.head_commit.timestamp }}
           labels: ${{ steps.meta.outputs.labels }}
+          no-cache: true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
@@ -261,10 +262,11 @@ jobs:
           # Login to registry
           echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin || true
           
-          # Pull latest image
+          # Pull latest image - force pull to get latest changes
           FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
           echo "Pulling image: $FULL_IMAGE"
-          docker pull "$FULL_IMAGE" || echo "Image pull failed, will try to proceed"
+          docker pull "$FULL_IMAGE" --no-cache || echo "Image pull failed, will try to proceed"
+          docker image prune -f --filter "until=1h" || true
           
           # Create docker-compose.yml
           cat > docker-compose.yml << 'COMPOSEFILE'
@@ -617,12 +619,15 @@ jobs:
           }
           NGINXFILE
           
-          # Start containers
-          docker compose up -d
+          # Start containers with fresh pull
+          echo "Starting fresh Docker Compose stack..."
+          docker compose down || true
+          docker compose pull --ignore-pull-failures || true
+          docker compose up -d --force-recreate
           
           # Wait for services
           echo "Waiting for services to be healthy..."
-          sleep 10
+          sleep 15
           EOFSCRIPT
 
       - name: Health Check
