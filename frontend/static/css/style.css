@@ -1087,7 +1087,7 @@ tr:hover {
     animation: slideUp 0.3s ease;
 
     max-height: 90vh;
-    overflow-y: auto;
+    overflow-y: scroll;
 
     box-sizing: border-box;
 }
